@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            .calc {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+            .calc .buttons {
+                display: grid;
+                grid-template-columns: repeat(12, 1fr);
+                grid-template-rows: repeat(5, 1fr);
+            }
+            .calc,
+            .calc .field,
+            .calc .buttons *,
+            button {
+                margin: 5px;
+                padding: 10px;
+                border-style: solid;
+                border-radius: 5px;
+                border-width: 2px;
+                border-color: black;
+            }
+            .calc .field,
+            .calc .buttons * {
+                font-size: 1.2em;
+                text-align: center;
+                cursor: pointer;
+                user-select: none;
+                transition: 0.2s;
+            }
+            .calc .buttons *:active,
+            button:active {
+                transform: translateY(1px);
+            }
+            .calc .sign {
+                grid-row-start: 1;
+            }
+            .calc .sign.plus {
+                grid-column-start: 1;
+                grid-column-end: 4;
+            }
+            .calc .sign.minus {
+                grid-column-start: 4;
+                grid-column-end: 7;
+            }
+            .calc .sign.multiply {
+                grid-column-start: 7;
+                grid-column-end: 10;
+            }
+            .calc .sign.divide {
+                grid-column-start: 10;
+                grid-column-end: 13;
+            }
+            .calc .digit.d-7,
+            .calc .digit.d-8,
+            .calc .digit.d-9 {
+                grid-row-start: 2;
+            }
+            .calc .digit.d-4,
+            .calc .digit.d-5,
+            .calc .digit.d-6 {
+                grid-row-start: 3;
+            }
+            .calc .digit.d-1,
+            .calc .digit.d-2,
+            .calc .digit.d-3 {
+                grid-row-start: 4;
+            }
+            .calc .digit.d-1,
+            .calc .digit.d-4,
+            .calc .digit.d-7 {
+                grid-column-start: 1;
+                grid-column-end: 5;
+            }
+            .calc .digit.d-2,
+            .calc .digit.d-5,
+            .calc .digit.d-8 {
+                grid-column-start: 5;
+                grid-column-end: 9;
+            }
+            .calc .digit.d-3,
+            .calc .digit.d-6,
+            .calc .digit.d-9 {
+                grid-column-start: 9;
+                grid-column-end: 13;
+            }
+            .calc .digit.d-0,
+            .calc .reset {
+                grid-row-start: 5;
+            }
+            .calc .digit.d-0 {
+                grid-column-start: 1;
+                grid-column-end: 7;
+            }
+            .calc .reset {
+                grid-column-start: 7;
+                grid-column-end: 13;
+            }
+            button {
+                background-color: white;
+                outline: none;
+                cursor: pointer;
+            }
+            .calc.dark,
+            .calc.dark * {
+                background-color: black;
+                border-color: white;
+                color: white;
+            }
+            .calc.wide .buttons {
+                grid-template-columns: repeat(15, 1fr);
+                grid-template-rows: 0px repeat(4, 1fr);
+            }
+            .calc.wide .sign {
+                grid-column-start: 13;
+                grid-column-end: 16;
+            }
+            .calc.wide .sign.plus {
+                grid-row-start: 2;
+                grid-row-end: 3;
+            }
+            .calc.wide .sign.minus {
+                grid-row-start: 3;
+                grid-row-end: 4;
+            }
+            .calc.wide .sign.multiply {
+                grid-row-start: 4;
+                grid-row-end: 5;
+            }
+            .calc.wide .sign.divide {
+                grid-row-start: 5;
+                grid-row-end: 6;
+            }
+        </style>
+        <script>
+            const state = {
+                left: "",
+                sign: "",
+                right: ""
+            };
+
+            function UpdateField() {
+                const field = document.getElementById("field");
+                if(!field) {
+                    throw "field not found";
+                }
+
+                const {left, sign, right} = state;
+
+                if(right) {
+                    const result = calculateResult();
+                    field.innerHTML = `${left} ${signAppearance(sign)} ${right} = ${result}`;
+                    return;
+                }
+                if(sign) {
+                    field.innerHTML = `${left} ${signAppearance(sign)}`;
+                    return;
+                }
+                if(left) {
+                    field.innerHTML = left;
+                    return;
+                }
+                field.innerHTML = "Let's count";
+            }
+
+            function calculateResult() {
+                const {left, sign, right} = state;
+                return signAction(sign)(Number(left), Number(right));
+            }
+
+            function signAction(sign) {
+                switch(sign){
+                    case "plus":
+                    return (a, b) => a + b;
+                    case "minus":
+                    return (a, b) => a - b;
+                    case "multiply":
+                    return (a, b) => a * b;
+                    case "divide":
+                    return (a, b) => a / b;
+                    default:
+                    throw `unknown sign (${sign})`;
+                }
+            }
+
+            function signAppearance(sign) {
+                switch(sign){
+                    case "plus":
+                    return "+";
+                    case "minus":
+                    return "-";
+                    case "multiply":
+                    return "x";
+                    case "divide":
+                    return "/";
+                    default:
+                    throw `unknown sign (${sign})`;
+                }
+            }
+
+            function digit(digit) {
+                if(state.sign){
+                    state.right += digit;
+                } else {
+                    state.left += digit;
+                }
+                
+                UpdateField();
+            }
+
+            function newSign(sign) {
+                if(state.right) {
+                    state.left = `${calculateResult()}`;
+                    state.right = "";
+                }
+
+                if(state.left) {
+                    state.sign = sign;
+                    UpdateField();
+                }
+            }
+
+            function reset() {
+                state.left = state.sign = state.right = "";
+                UpdateField();
+            }
+
+            function changeTheme() {
+                const calcs = document.getElementsByClassName("calc");
+
+                for(let i = 0; i < calcs.length; ++i){
+                    calcs[i].classList.toggle("dark");
+                }
+            }
+
+            function changeLayout() {
+                const calcs = document.getElementsByClassName("calc");
+
+                for(let i = 0; i < calcs.length; ++i){
+                    calcs[i].classList.toggle("wide");
+                }
+            }
+
+            window.onload = UpdateField;
+        </script>
+    </head>
+    <body>
+        <button onclick="changeTheme()">Change theme</button>
+        <button onclick="changeLayout()">Change layout</button>
+        <div class="calc">
+            <div id="field" class="field"></div>
+            <div class="buttons">
+                <div class="digit d-0" onclick="digit(0)">0</div>
+                <div class="digit d-1" onclick="digit(1)">1</div>
+                <div class="digit d-2" onclick="digit(2)">2</div>
+                <div class="digit d-3" onclick="digit(3)">3</div>
+                <div class="digit d-4" onclick="digit(4)">4</div>
+                <div class="digit d-5" onclick="digit(5)">5</div>
+                <div class="digit d-6" onclick="digit(6)">6</div>
+                <div class="digit d-7" onclick="digit(7)">7</div>
+                <div class="digit d-8" onclick="digit(8)">8</div>
+                <div class="digit d-9" onclick="digit(9)">9</div>
+                <div class="sign plus" onclick="newSign('plus')">+</div>
+                <div class="sign minus" onclick="newSign('minus')">-</div>
+                <div class="sign multiply" onclick="newSign('multiply')">x</div>
+                <div class="sign divide" onclick="newSign('divide')">/</div>
+                <div class="reset" onclick="reset()">reset</div>
+            </div>
+        </div>
+    </body>
+</html>
